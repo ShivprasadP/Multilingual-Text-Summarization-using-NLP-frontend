@@ -96,7 +96,7 @@ function PreviousSummary() {
             <div className="form-group row">
               <label htmlFor="inputLanguage" className="col-sm-4 col-form-label" style={{ fontSize: '1.2rem' }}>Input Language</label>
               <div className="col-sm-4">
-                <select className="form-control" id="inputLanguage" value={summary.inputLanguage} disabled>
+                <select className="form-control" id="inputLanguage" value={summary.inputLanguage}>
                   <option>{summary.inputLanguage}</option>
                   {languages.filter(lang => lang !== summary.inputLanguage).map(lang => (
                     <option key={lang} value={lang}>{lang}</option>
@@ -108,7 +108,7 @@ function PreviousSummary() {
             <div className="form-group row mb-5">
               <label htmlFor="outputLanguage" className="col-sm-4 col-form-label" style={{ fontSize: '1.2rem' }}>Output Language</label>
               <div className="col-sm-4">
-                <select className="form-control" id="outputLanguage" value={summary.outputLanguage} disabled>
+                <select className="form-control" id="outputLanguage" value={summary.outputLanguage}>
                   <option>{summary.outputLanguage}</option>
                   {languages.filter(lang => lang !== summary.outputLanguage).map(lang => (
                     <option key={lang} value={lang}>{lang}</option>
@@ -119,7 +119,7 @@ function PreviousSummary() {
 
             <hr />
             <label htmlFor="inputText" className="col-form-label" style={{ fontSize: '1.2rem' }}>Input Text</label>
-            <textarea className="form-control mb-5" id="inputText" rows="10" placeholder='Enter input text' value={summary.text} disabled></textarea>
+            <textarea className="form-control mb-5" id="inputText" rows="10" placeholder='Enter input text' value={summary.text}></textarea>
             <div className="text-center">
               <button type="submit" className="btn" style={{ color: '#ffffff', backgroundColor: '#505050'}}>Save Changes</button>
             </div>
