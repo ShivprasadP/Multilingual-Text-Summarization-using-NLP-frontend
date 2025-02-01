@@ -10,12 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google-cloud/translate": "^8.5.0",
     "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
+    "franc": "^6.2.0",
+    "franc-min": "^6.2.0",
+    "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
+    "langdetect": "^0.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.27.0"
+    "react-router-dom": "^6.27.0",
+    "react-toastify": "^10.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

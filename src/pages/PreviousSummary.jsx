@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import logo from '../assets/logo.png';
 
 function PreviousSummary() {
   const { id } = useParams();
@@ -11,6 +13,7 @@ function PreviousSummary() {
   const languages = ['English', 'Hindi', 'Marathi'];
   const email = sessionStorage.getItem('email');
   const navigate = useNavigate();
+  const pdfRef = useRef();
 
   useEffect(() => {
     if (!email) {
@@ -47,31 +50,57 @@ function PreviousSummary() {
     }
   };
 
-  const handleDownloadSummary = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 10;
-    const maxLineWidth = pageWidth - margin * 2;
-    const lineHeight = 10;
-    let cursorY = 10;
+  const handleDownloadSummary = async () => {
+    const input = pdfRef.current;
+  
+    // Temporarily show the PDF section
+    input.style.display = 'block';
+  
+    try {
+      const canvas = await html2canvas(input, {
+        useCORS: true, // Allows cross-origin images
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  
+      pdf.addImage(imgData, 'PNG', 15, 15, pdfWidth - 30, pdfHeight);
+      pdf.save(`${id}.pdf`);
+  
+      toast.success('PDF downloaded successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again later.');
+    } finally {
+      // Hide the PDF section again
+      input.style.display = 'none';
+    }
+  };
+  
 
-    const addText = (text, x, y) => {
-      const lines = doc.splitTextToSize(text, maxLineWidth);
-      doc.text(lines, x, y);
-      return y + lines.length * lineHeight;
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSummary((prevSummary) => ({
+      ...prevSummary,
+      [name]: value,
+    }));
+  };
 
-    cursorY = addText('Summary Details', margin, cursorY);
-    cursorY = addText(`Date: ${new Date(summary.date).toLocaleDateString()}`, margin, cursorY);
-    cursorY = addText(`User Email: ${email}`, margin, cursorY);
-    cursorY = addText(`Input Language: ${summary.inputLanguage}`, margin, cursorY);
-    cursorY = addText(`Output Language: ${summary.outputLanguage}`, margin, cursorY);
-    cursorY = addText('Input Text:', margin, cursorY);
-    cursorY = addText(summary.text, margin, cursorY);
-    cursorY = addText('Output Text:', margin, cursorY);
-    cursorY = addText(summary.summary, margin, cursorY);
-
-    doc.save(`${id}.pdf`);
+  const handleSaveChanges = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/summaries/${id}`, summary);
+      if (response.status === 200) {
+        toast.success('Summary updated successfully!');
+      } else {
+        toast.error('Failed to update summary. Please try again later.');
+      }
+    } catch (error) {
+      console.error('Error updating summary:', error);
+      toast.error('Failed to update summary. Please try again later.');
+    }
   };
 
   if (!summary) {
@@ -92,13 +121,13 @@ function PreviousSummary() {
           </div>
         </div>
         <div className="col-md-8">
-          <form className='mt-2'>
+          <form className='mt-2' onSubmit={handleSaveChanges}>
             <div className="form-group row">
               <label htmlFor="inputLanguage" className="col-sm-4 col-form-label" style={{ fontSize: '1.2rem' }}>Input Language</label>
               <div className="col-sm-4">
-                <select className="form-control" id="inputLanguage" value={summary.inputLanguage}>
-                  <option>{summary.inputLanguage}</option>
-                  {languages.filter(lang => lang !== summary.inputLanguage).map(lang => (
+                <select className="form-control" id="inputLanguage" name="inputLanguage" value={summary.inputLanguage} onChange={handleChange}>
+                  <option>Select Language</option>
+                  {languages.map(lang => (
                     <option key={lang} value={lang}>{lang}</option>
                   ))}
                 </select>
@@ -108,9 +137,9 @@ function PreviousSummary() {
             <div className="form-group row mb-5">
               <label htmlFor="outputLanguage" className="col-sm-4 col-form-label" style={{ fontSize: '1.2rem' }}>Output Language</label>
               <div className="col-sm-4">
-                <select className="form-control" id="outputLanguage" value={summary.outputLanguage}>
-                  <option>{summary.outputLanguage}</option>
-                  {languages.filter(lang => lang !== summary.outputLanguage).map(lang => (
+                <select className="form-control" id="outputLanguage" name="outputLanguage" value={summary.outputLanguage} onChange={handleChange}>
+                  <option>Select Language</option>
+                  {languages.map(lang => (
                     <option key={lang} value={lang}>{lang}</option>
                   ))}
                 </select>
@@ -119,7 +148,7 @@ function PreviousSummary() {
 
             <hr />
             <label htmlFor="inputText" className="col-form-label" style={{ fontSize: '1.2rem' }}>Input Text</label>
-            <textarea className="form-control mb-5" id="inputText" rows="10" placeholder='Enter input text' value={summary.text}></textarea>
+            <textarea className="form-control mb-5" id="inputText" name="text" rows="10" placeholder='Enter input text' value={summary.text} onChange={handleChange}></textarea>
             <div className="text-center">
               <button type="submit" className="btn" style={{ color: '#ffffff', backgroundColor: '#505050'}}>Save Changes</button>
             </div>
@@ -135,6 +164,39 @@ function PreviousSummary() {
           </div>
         </div>
       </div>
+
+      <div 
+  ref={pdfRef} 
+  style={{ borderWidth: '40px', border: '3px solid black', borderRadius: '15px', minHeight: '100vh', padding: '20px', display: 'none' }}
+>
+
+        <div style={{ fontFamily: 'Arial, sans-serif', margin: '10px' }}>
+          <div className="d-flex justify-content-between align-items-center">
+            <img src={logo} alt="Logo" style={{ width: '100px', height: '100px' }} />
+            <h1 className="text-center flex-grow-1 text-primary">GenZ Intelligents</h1>
+            <p>
+              <strong>Date:</strong> {new Date(summary.date).toLocaleDateString()}
+            </p>
+          </div>
+          <hr />
+          <p>
+            <strong>User Email:</strong> {email}
+          </p>
+          <p>
+            <strong>Input Language:</strong> {summary.inputLanguage}
+          </p>
+          <p>
+            <strong>Output Language:</strong> {summary.outputLanguage}
+          </p>
+          <h2 className='col-form-label'>Input Text</h2>
+          <p className='form-control mb-5' style={{height: '20vh'}}>{summary.text}</p>
+          <h2 className='col-form-label'>Output Text</h2>
+          <p className='form-control mb-5' style={{height: '20vh'}}>{summary.summary}</p>
+        </div>
+      </div>
+
+
+
     </div>
   );
 }
