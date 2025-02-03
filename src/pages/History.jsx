@@ -72,7 +72,7 @@ function History() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <button type="submit" className="btn btn-primary mt-2">Search</button>
+            <button type="submit" className="btn btn-secondary mt-2">Search</button>
           </form>
         </div>
         {summaries.length === 0 ? (
