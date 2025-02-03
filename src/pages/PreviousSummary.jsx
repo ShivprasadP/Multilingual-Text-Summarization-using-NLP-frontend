@@ -28,6 +28,23 @@ function PreviousSummary() {
     fetchSummary();
   }, [id, email, navigate]);
 
+  const detectLanguage = async (text) => {
+    try {
+      const response = await axios.post(`https://translation.googleapis.com/language/translate/v2/detect`, null, {
+        params: {
+          q: text,
+          key: import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY
+        }
+      });
+      const detectedLanguage = response.data.data.detections[0][0].language;
+      return detectedLanguage;
+    } catch (error) {
+      console.error('Error detecting language:', error);
+      toast.error('Failed to detect language. Please try again later.');
+      return 'unknown';
+    }
+  };
+
   const handleRemoveSummary = async () => {
     const confirmDelete = window.confirm('Are you sure you want to delete this summary?');
     if (confirmDelete) {
@@ -46,21 +63,41 @@ function PreviousSummary() {
     }
   };
 
-  const handleDownloadSummary = () => {
+  const handleDownloadSummary = async () => {
     if (!summary) return;
 
-    const summaryData = {
-      date: new Date(summary.date).toISOString(),
-      email,
-      inputLanguage: summary.inputLanguage,
-      outputLanguage: summary.outputLanguage,
-      inputText: summary.text,
-      summary: summary.summary
-    };
+    if (!summary.inputLanguage || summary.inputLanguage === 'unknown') {
+      toast.error('Unable to detect input language.');
+      return;
+    }
+    if (!summary.outputLanguage || summary.outputLanguage === 'Select Language') {
+      toast.error('Please select an output language.');
+      return;
+    }
 
-    const queryString = new URLSearchParams(summaryData).toString();
-    const summaryUrl = `${window.location.origin}/summary.html?${queryString}`;
-    window.open(summaryUrl, '_blank');
+    try {
+      const response = await axios.post('/generate-pdf', {
+        date: new Date(summary.date).toLocaleDateString(),
+        email,
+        inputLanguage: summary.inputLanguage,
+        outputLanguage: summary.outputLanguage,
+        inputText: summary.text,
+        summary: summary.summary
+      }, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'summary.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again later.');
+    }
   };
 
   const handleChange = (e) => {
@@ -73,8 +110,18 @@ function PreviousSummary() {
 
   const handleSaveChanges = async (e) => {
     e.preventDefault();
+
+    const detectedLanguage = await detectLanguage(summary.text);
+    setSummary((prevSummary) => ({
+      ...prevSummary,
+      inputLanguage: detectedLanguage,
+    }));
+
     try {
-      const response = await axios.put(`${import.meta.env.VITE_API_URL}/summaries/${id}`, summary);
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/summaries/${id}`, {
+        ...summary,
+        inputLanguage: detectedLanguage
+      });
       if (response.status === 200) {
         toast.success('Summary updated successfully!');
       } else {
@@ -108,7 +155,7 @@ function PreviousSummary() {
             <div className="form-group row">
               <label htmlFor="inputLanguage" className="col-sm-4 col-form-label" style={{ fontSize: '1.2rem' }}>Input Language</label>
               <div className="col-sm-4">
-                <select className="form-control" id="inputLanguage" name="inputLanguage" value={summary.inputLanguage} onChange={handleChange}>
+                <select className="form-control" id="inputLanguage" name="inputLanguage" value={summary.inputLanguage} onChange={handleChange} disabled>
                   <option>Select Language</option>
                   {languages.map(lang => (
                     <option key={lang} value={lang}>{lang}</option>
