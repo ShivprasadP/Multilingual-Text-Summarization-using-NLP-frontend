@@ -1,11 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
-import logo from '../assets/logo.png';
 
 function PreviousSummary() {
   const { id } = useParams();
@@ -13,7 +10,6 @@ function PreviousSummary() {
   const languages = ['English', 'Hindi', 'Marathi'];
   const email = sessionStorage.getItem('email');
   const navigate = useNavigate();
-  const pdfRef = useRef();
 
   useEffect(() => {
     if (!email) {
@@ -50,35 +46,22 @@ function PreviousSummary() {
     }
   };
 
-  const handleDownloadSummary = async () => {
-    const input = pdfRef.current;
-  
-    // Temporarily show the PDF section
-    input.style.display = 'block';
-  
-    try {
-      const canvas = await html2canvas(input, {
-        useCORS: true, // Allows cross-origin images
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF();
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-  
-      pdf.addImage(imgData, 'PNG', 15, 15, pdfWidth - 30, pdfHeight);
-      pdf.save(`${id}.pdf`);
-  
-      toast.success('PDF downloaded successfully!');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again later.');
-    } finally {
-      // Hide the PDF section again
-      input.style.display = 'none';
-    }
+  const handleDownloadSummary = () => {
+    if (!summary) return;
+
+    const summaryData = {
+      date: new Date(summary.date).toISOString(),
+      email,
+      inputLanguage: summary.inputLanguage,
+      outputLanguage: summary.outputLanguage,
+      inputText: summary.text,
+      summary: summary.summary
+    };
+
+    const queryString = new URLSearchParams(summaryData).toString();
+    const summaryUrl = `${window.location.origin}/summary.html?${queryString}`;
+    window.open(summaryUrl, '_blank');
   };
-  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -164,39 +147,6 @@ function PreviousSummary() {
           </div>
         </div>
       </div>
-
-      <div 
-  ref={pdfRef} 
-  style={{ borderWidth: '40px', border: '3px solid black', borderRadius: '15px', minHeight: '100vh', padding: '20px', display: 'none' }}
->
-
-        <div style={{ fontFamily: 'Arial, sans-serif', margin: '10px' }}>
-          <div className="d-flex justify-content-between align-items-center">
-            <img src={logo} alt="Logo" style={{ width: '100px', height: '100px' }} />
-            <h1 className="text-center flex-grow-1 text-primary">GenZ Intelligents</h1>
-            <p>
-              <strong>Date:</strong> {new Date(summary.date).toLocaleDateString()}
-            </p>
-          </div>
-          <hr />
-          <p>
-            <strong>User Email:</strong> {email}
-          </p>
-          <p>
-            <strong>Input Language:</strong> {summary.inputLanguage}
-          </p>
-          <p>
-            <strong>Output Language:</strong> {summary.outputLanguage}
-          </p>
-          <h2 className='col-form-label'>Input Text</h2>
-          <p className='form-control mb-5' style={{height: '20vh'}}>{summary.text}</p>
-          <h2 className='col-form-label'>Output Text</h2>
-          <p className='form-control mb-5' style={{height: '20vh'}}>{summary.summary}</p>
-        </div>
-      </div>
-
-
-
     </div>
   );
 }

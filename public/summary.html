@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Summary</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .summary-section {
+      margin-bottom: 20px;
+    }
+    .summary-section label {
+      font-weight: bold;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .header img {
+      max-height: 100px;
+    }
+    .header h1 {
+      flex-grow: 1;
+      font-family: 'Georgia', serif;
+      font-size: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="header">
+      <img src="/logo.png" alt="Logo">
+      <h1>Text Summarization using NLP</h1>
+    </div>
+    <hr>
+    <div class="summary-section row">
+      <div class="col-sm-6">
+        <label>Date:</label>
+        <span id="summaryDate"></span>
+      </div>
+      <div class="col-sm-6">
+        <label>User Email:</label>
+        <span id="summaryEmail"></span>
+      </div>
+    </div>
+    <hr>
+    <div class="summary-section row">
+      <label class="col-sm-4">Input Language:</label>
+      <span id="summaryInputLanguage" class="col-sm-8"></span>
+    </div>
+    <div class="summary-section row">
+      <label class="col-sm-4">Output Language:</label>
+      <span id="summaryOutputLanguage" class="col-sm-8"></span>
+    </div>
+    <div class="summary-section row">
+      <label class="col-sm-4">Input Text:</label>
+      <p id="summaryInputText" class="col-sm-8"></p>
+    </div>
+    <div class="summary-section row">
+      <label class="col-sm-4">Output Text:</label>
+      <p id="summaryOutputText" class="col-sm-8"></p>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      document.getElementById('summaryDate').textContent = new Date(urlParams.get('date')).toLocaleDateString();
+      document.getElementById('summaryEmail').textContent = urlParams.get('email');
+      document.getElementById('summaryInputLanguage').textContent = urlParams.get('inputLanguage');
+      document.getElementById('summaryOutputLanguage').textContent = urlParams.get('outputLanguage');
+      document.getElementById('summaryInputText').textContent = urlParams.get('inputText');
+      document.getElementById('summaryOutputText').textContent = urlParams.get('summary');
+      window.print();
+    });
+  </script>
+</body>
+</html>
