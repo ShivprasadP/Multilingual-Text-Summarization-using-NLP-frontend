@@ -63,41 +63,113 @@ function PreviousSummary() {
     }
   };
 
-  const handleDownloadSummary = async () => {
+  const generateHTMLContent = (summaryData) => {
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Summary</title>
+        <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+          }
+          h1 {
+            text-align: center;
+          }
+          .summary-section {
+            margin-bottom: 20px;
+          }
+          .summary-section label {
+            font-weight: bold;
+          }
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .header img {
+            max-height: 100px;
+          }
+          .header h1 {
+            flex-grow: 1;
+            font-family: 'Georgia', serif;
+            font-size: 3rem;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container mt-5">
+          <div class="header">
+            <img src="/logo.png" alt="Logo">
+            <h1>Text Summarization using NLP</h1>
+          </div>
+          <hr>
+          <div class="summary-section row">
+            <div class="col-sm-6">
+              <label>Date:</label>
+              <span>${new Date(summaryData.date).toLocaleDateString()}</span>
+            </div>
+            <div class="col-sm-6">
+              <label>User Email:</label>
+              <span>${summaryData.email}</span>
+            </div>
+          </div>
+          <hr>
+          <div class="summary-section row">
+            <label class="col-sm-4">Input Language:</label>
+            <span class="col-sm-8">${summaryData.inputLanguage}</span>
+          </div>
+          <div class="summary-section row">
+            <label class="col-sm-4">Output Language:</label>
+            <span class="col-sm-8">${summaryData.outputLanguage}</span>
+          </div>
+          <div class="summary-section row">
+            <label class="col-sm-4">Input Text:</label>
+            <p class="col-sm-8">${summaryData.text}</p>
+          </div>
+          <div class="summary-section row">
+            <label class="col-sm-4">Output Text:</label>
+            <p class="col-sm-8">${summaryData.summary}</p>
+          </div>
+        </div>
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `;
+  };
+
+  const handleDownloadSummary = () => {
     if (!summary) return;
 
-    if (!summary.inputLanguage || summary.inputLanguage === 'unknown') {
-      toast.error('Unable to detect input language.');
-      return;
-    }
-    if (!summary.outputLanguage || summary.outputLanguage === 'Select Language') {
-      toast.error('Please select an output language.');
-      return;
-    }
+    const summaryData = {
+      date: summary.date,
+      email,
+      inputLanguage: summary.inputLanguage,
+      outputLanguage: summary.outputLanguage,
+      text: summary.text,
+      summary: summary.summary
+    };
 
-    try {
-      const response = await axios.post('/generate-pdf', {
-        date: new Date(summary.date).toLocaleDateString(),
-        email,
-        inputLanguage: summary.inputLanguage,
-        outputLanguage: summary.outputLanguage,
-        inputText: summary.text,
-        summary: summary.summary
-      }, {
-        responseType: 'blob'
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'summary.pdf');
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again later.');
-    }
+    const htmlContent = generateHTMLContent(summaryData);
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(htmlContent);
+    newWindow.document.close();
   };
 
   const handleChange = (e) => {
